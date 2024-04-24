@@ -1,0 +1,5 @@
+fastapi[all]
+google-cloud-storage
+python-multipart
+Pillow
+timm

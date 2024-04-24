@@ -1,0 +1,3 @@
+# Exclude python venv and envs
+
+env/
