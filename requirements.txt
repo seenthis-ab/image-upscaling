@@ -3,3 +3,4 @@ google-cloud-storage
 python-multipart
 Pillow
 timm
+opencv-python

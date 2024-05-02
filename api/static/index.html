@@ -42,7 +42,7 @@
     const uploadFile = async (file) => {
       const formData = new FormData();
       formData.append('file', file);
-      const res = await fetch('http://localhost:3000/upscale', {
+      const res = await fetch('http://localhost:8000/upscale/', {
         method: 'POST',
         body: formData,
       });
@@ -51,6 +51,8 @@
 
     const loadImage = (src) => new Promise((resolve) => {
       const img = new Image();
+      // Set annonymous crossOrigin to avoid tainted canvas
+      img.crossOrigin = 'anonymous';
       img.src = src;
       img.onload = () => resolve(img);
     });
@@ -134,13 +136,11 @@
     const upload = (file) => new Promise(async (resolve) => {
       const inputImg = await imageFromFile(file);
       const json = await uploadFile(file);
-      const socket = new WebSocket(`ws://localhost:3000/subscribe/${json.id}`);
-      socket.addEventListener('message', async(e) => {
-        const res = JSON.parse(e.data);
-        const result = await loadImage(res.url);
-        resolve(setup(inputImg, result));
-      });
+      console.log(json.url)
+      const result = await loadImage(json.url);
+      resolve(setup(inputImg, result));
     });
+
 
     button.addEventListener('click', async () => {
       document.querySelector('.form').style.display = 'none';
