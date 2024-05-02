@@ -1,12 +1,12 @@
 
 import cv2
 import numpy as np
-from collections import OrderedDict
 import os
 import torch
 import requests
+from PIL import Image
 
-from .models.network_swinir import SwinIR as net
+from models.network_swinir import SwinIR as net
 
 
 def upscale(img_lq):
@@ -14,6 +14,7 @@ def upscale(img_lq):
     WINDOW_SIZE = 8
     MODEL_PATH = 'model_zoo/swinir/003_realSR_BSRGAN_DFOWMFC_s64w8_SwinIR-L_x4_GAN.pth'
 
+    height, width = img_lq.shape[:2]
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     # set up model
@@ -28,14 +29,6 @@ def upscale(img_lq):
     model = define_model()
     model.eval()
     model = model.to(device)
-
-    test_results = OrderedDict()
-    test_results['psnr'] = []
-    test_results['ssim'] = []
-    test_results['psnr_y'] = []
-    test_results['ssim_y'] = []
-    test_results['psnrb'] = []
-    test_results['psnrb_y'] = []
 
     # read image
     img_lq = np.transpose(img_lq if img_lq.shape[2] == 1 else img_lq[:, :, [2, 1, 0]], (2, 0, 1))  # HCW-BGR to CHW-RGB
@@ -54,11 +47,19 @@ def upscale(img_lq):
 
     # save image
     output = output.data.squeeze().float().cpu().clamp_(0, 1).numpy()
+
+    # Pillow image
+    pillow_image = np.transpose(output, (1, 2, 0))
+    pillow_image = Image.fromarray((pillow_image * 255).astype('uint8'), 'RGB')
+
     if output.ndim == 3:
         output = np.transpose(output[[2, 1, 0], :, :], (1, 2, 0))  # CHW-RGB to HCW-BGR
     output = (output * 255.0).round().astype(np.uint8)  # float32 to uint8
 
-    return output
+    print(width, height)
+    resized_image = resize_image(pillow_image, width, height)
+
+    return resized_image
 
 
 def define_model():
@@ -92,3 +93,6 @@ def test(img_lq, model):
     output = model(img_lq)
 
     return output
+
+def resize_image(image, width, height):
+    return image.resize((width, height), Image.LANCZOS)
